@@ -1,6 +1,6 @@
 module PokerHelp
   module Utility
-    def count_outs(hand, deck, cards_remaining=1,
+    def outs_odds_probability_hash(hand, deck, cards_remaining=1,
       targets = [:straight?, :flush?, :straight_flush?,
         :royal_flush?, :full_house?, :three_of_a_kind?, :two_pair?])
 
@@ -24,7 +24,9 @@ module PokerHelp
 
       total = 1 - probabilities.reduce(1) {|accum, x| accum * x}
 
-      [hits, total, probabilities.map{|p| 1-p}]
+      odds = (1/total) -1
+
+      {:outs => hits, :odds => odds, :probability => total, :prob_per_card => probabilities.map{|p| 1-p}}
     end
 
     def outs(candidates, targets)
