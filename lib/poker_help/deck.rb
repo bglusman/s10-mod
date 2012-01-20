@@ -3,7 +3,7 @@ module PokerHelp
     include Enumerable
     extend Forwardable
     def_delegators :@cards, :each
-    alias :count :size
+    #alias :count :size
 
     def initialize
       @cards = []

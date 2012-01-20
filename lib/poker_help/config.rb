@@ -1,6 +1,6 @@
 module PokerHelp
   class Config
-    class < self
+    class << self
       attr_reader :holdem, :bet_parameters
     end
     @holdem =[:ante,
@@ -10,15 +10,14 @@ module PokerHelp
              :deal_two_hole_cards,
              :limit_bet,
              #:flop_event,
-             :deal_three_board_cards,
+             :deal_flop,
              :limit_bet,
              :turn_event,
-             :deal_one_board_card,
+             :deal_turn,
              :limit_bet,
-             :deal_one_board_card,
+             :deal_river,
              :limit_bet,
-             :showdown,
-             :award_pot,
+             :showdown_and_award_pot,
              :move_button]
 
     @bet_parameters = {:ante_size         => 0,       #used w/ blinds in tournaments & in stud/draw

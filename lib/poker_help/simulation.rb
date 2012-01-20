@@ -12,7 +12,7 @@ module PokerHelp
 
     def run
       round = Round.new(game, players, betting)
-      game.action_sequence.each {|action| round.send(action)}
+      game.action_sequence.each {|action| round.send(action); next if round.winner}
     end
   end
 end
