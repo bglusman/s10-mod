@@ -1,6 +1,6 @@
 module PokerHelp
   module Utility
-    def outs_odds_probability_hash(hand, deck, cards_remaining=1,
+    def self.outs_odds_probability_hash(hand, deck, cards_remaining=1,
       targets = [:straight?, :flush?, :straight_flush?,
         :royal_flush?, :full_house?, :three_of_a_kind?, :two_pair?])
 

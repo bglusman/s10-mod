@@ -13,7 +13,7 @@ module PokerHelp
     end
 
     def deal_two_hole_cards
-      players.each {|p| p.receive_cards(deck.deal(2))}
+      players.each {|p| p.receive_cards(Hand.new(deck.deal(2)))}
     end
 
     def limit_bet
