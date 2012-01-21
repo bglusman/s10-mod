@@ -1,6 +1,6 @@
 module PokerHelp
   class Pot
-    attr_accessor :bets, :player, :bet_to_call, :history
+    attr_accessor :bets, :player, :bet_to_call, :history, :current_bet_size
     def initialize
       @bets     =[]
       @history  =[]

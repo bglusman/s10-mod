@@ -20,12 +20,13 @@ module PokerHelp
              :showdown_and_award_pot,
              :move_button]
 
-    @bet_parameters = {:ante_size         => 0,       #used w/ blinds in tournaments & in stud/draw
-                      :limit              => :single, #:pot, :nolimit
-                      :big_blind_size     => 2,
-                      :small_blind_size   => 1,
-                      :min_bet_pre_turn   => 2,
-                      :min_bet_post_turn  => 4
+    @bet_parameters = {:ante_size             => 0,       #used w/ blinds in tournaments & in stud/draw
+                      :limit                  => :single, #:pot, :nolimit
+                      :big_blind_size         => 2,
+                      :small_blind_size       => 1,
+                      :min_bet_pre_turn       => 2,
+                      :min_bet_post_turn      => 4,
+                      :raise_limit  => 3
                       }
 
   end

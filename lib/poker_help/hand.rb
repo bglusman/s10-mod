@@ -38,11 +38,11 @@ module PokerHelp
     end
     @allow_duplicates = false    # true by default
 
-    # Returns a new PokerHand object. Accepts the cards represented
+    # Returns a new Hand object. Accepts the cards represented
     # in a string or an array
     #
-    #     PokerHand.new("3d 5c 8h Ks")   # => #<PokerHand:0x5c673c ...
-    #     PokerHand.new(["3d", "5c", "8h", "Ks"])  # => #<PokerHand:0x5c2d6c ...
+    #     Hand.new("3d 5c 8h Ks")   # => #<Hand:0x5c673c ...
+    #     Hand.new(["3d", "5c", "8h", "Ks"])  # => #<Hand:0x5c2d6c ...
     def initialize(cards = [])
       if cards.is_a? Array
         @hand = cards.map do |card|
@@ -58,28 +58,28 @@ module PokerHelp
         @hand = cards
       end
       
-      check_for_duplicates if !PokerHand.allow_duplicates
+      check_for_duplicates if !Hand.allow_duplicates
     end
 
-    # Returns a new PokerHand object with the cards sorted by suit
+    # Returns a new Hand object with the cards sorted by suit
     # The suit order is spades, hearts, diamonds, clubs
     #
-    #     PokerHand.new("3d 5c 8h Ks").by_suit.just_cards   # => "Ks 8h 3d 5c"
+    #     Hand.new("3d 5c 8h Ks").by_suit.just_cards   # => "Ks 8h 3d 5c"
     def by_suit
-      PokerHand.new(@hand.sort_by { |c| [c.suit, c.face] }.reverse)
+      Hand.new(@hand.sort_by { |c| [c.suit, c.face] }.reverse)
     end
 
-    # Returns a new PokerHand object with the cards sorted by value
+    # Returns a new Hand object with the cards sorted by value
     # with the highest value first.
     #
-    #     PokerHand.new("3d 5c 8h Ks").by_face.just_cards   # => "Ks 8h 5c 3d"
+    #     Hand.new("3d 5c 8h Ks").by_face.just_cards   # => "Ks 8h 5c 3d"
     def by_face
-      PokerHand.new(@hand.sort_by { |c| [c.face, c.suit] }.reverse)
+      Hand.new(@hand.sort_by { |c| [c.face, c.suit] }.reverse)
     end
     
     # Returns string representation of the hand without the rank
     #
-    #     PokerHand.new(["3c", "Kh"]).just_cards     # => "3c Kh"
+    #     Hand.new(["3c", "Kh"]).just_cards     # => "3c Kh"
     def just_cards
       @hand.join(" ")
     end
@@ -89,7 +89,7 @@ module PokerHelp
     # The values returned are 1 less than the value on the card.
     # For example: 2's will be shown as 1.
     #
-    #     PokerHand.new(["3c", "Kh"]).face_values     # => [2, 12]
+    #     Hand.new(["3c", "Kh"]).face_values     # => [2, 12]
     def face_values
       @hand.map { |c| c.face }
     end
@@ -98,8 +98,8 @@ module PokerHelp
     # This can be useful for many purposes. A common use is the check if a card
     # exists in a hand.
     #
-    #     PokerHand.new("3d 4d 5d") =~ /8h/           # => nil
-    #     PokerHand.new("3d 4d 5d") =~ /4d/           # => #<MatchData:0x615e18>
+    #     Hand.new("3d 4d 5d") =~ /8h/           # => nil
+    #     Hand.new("3d 4d 5d") =~ /4d/           # => #<MatchData:0x615e18>
     def =~ (re)
       re.match(just_cards)
     end
@@ -278,7 +278,7 @@ module PokerHelp
 
     # Returns the verbose hand rating
     #
-    #     PokerHand.new("4s 5h 6c 7d 8s").hand_rating     # => "Straight"
+    #     Hand.new("4s 5h 6c 7d 8s").hand_rating     # => "Straight"
     def hand_rating
       OPS.map { |op|
         (method(op[1]).call()) ? op[0] : false
@@ -301,7 +301,7 @@ module PokerHelp
     # Returns a string of the hand arranged based on its rank. Usually this will be the
     # same as by_face but there are some cases where it makes a difference.
     #
-    #     ph = PokerHand.new("As 3s 5s 2s 4s")
+    #     ph = Hand.new("As 3s 5s 2s 4s")
     #     ph.sort_using_rank        # => "5s 4s 3s 2s As"
     #     ph.by_face.just_cards       # => "As 5s 4s 3s 2s"   
     def sort_using_rank
@@ -310,13 +310,13 @@ module PokerHelp
     
     # Returns string with a listing of the cards in the hand followed by the hand's rank.
     #
-    #     h = PokerHand.new("8c 8s")
+    #     h = Hand.new("8c 8s")
     #     h.to_s                      # => "8c 8s (Pair)"
     def to_s
       just_cards + " (" + hand_rating + ")"
     end
     
-    # Returns an array of `Card` objects that make up the `PokerHand`.
+    # Returns an array of `Card` objects that make up the `Hand`.
     def to_a
       @hand
     end
@@ -329,7 +329,7 @@ module PokerHelp
     
     # Add a card to the hand
     # 
-    #     hand = PokerHand.new("5d")
+    #     hand = Hand.new("5d")
     #     hand << "6s"          # => Add a six of spades to the hand by passing a string
     #     hand << ["7h", "8d"]  # => Add multiple cards to the hand using an array
     def << new_cards
@@ -338,8 +338,8 @@ module PokerHelp
       end
       
       new_cards.each do |nc|
-        unless PokerHand.allow_duplicates
-          raise "A card with the value #{nc} already exists in this hand. Set PokerHand.allow_duplicates to true if you want to be able to add a card more than once." if self =~ /#{nc}/
+        unless Hand.allow_duplicates
+          raise "A card with the value #{nc} already exists in this hand. Set Hand.allow_duplicates to true if you want to be able to add a card more than once." if self =~ /#{nc}/
         end
         
         @hand << Card.new(nc)
@@ -349,7 +349,7 @@ module PokerHelp
     
     # Remove a card from the hand.
     #
-    #     hand = PokerHand.new("5d Jd")
+    #     hand = Hand.new("5d Jd")
     #     hand.delete("Jd")           # => #<Card:0x5d0674 @value=23, @face=10, @suit=1>
     #     hand.just_cards             # => "5d"
     def delete card
@@ -358,7 +358,7 @@ module PokerHelp
     
     # Same concept as Array#uniq
     def uniq
-      PokerHand.new(@hand.uniq)
+      Hand.new(@hand.uniq)
     end
     
     # Resolving methods are just passed directly down to the @hand array
@@ -374,8 +374,8 @@ module PokerHelp
     private
     
     def check_for_duplicates
-      if @hand.size != @hand.uniq.size && !PokerHand.allow_duplicates
-        raise "Attempting to create a hand that contains duplicate cards. Set PokerHand.allow_duplicates to true if you do not want to ignore this error."
+      if @hand.size != @hand.uniq.size && !Hand.allow_duplicates
+        raise "Attempting to create a hand that contains duplicate cards. Set Hand.allow_duplicates to true if you do not want to ignore this error."
       end
     end
     

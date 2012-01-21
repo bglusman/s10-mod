@@ -5,11 +5,11 @@ module PokerHelp
     end
 
     def post_small_blind
-      players.each {|p| p.bet(self.betting[:small_blind_size], pot)}
+      players.first.bet(self.betting[:small_blind_size], pot)
     end
 
     def post_big_blind
-      players.each {|p| p.bet(self.betting[:big_blind_size], pot)}
+      players.rotate.first.bet(self.betting[:big_blind_size], pot)
     end
 
     def deal_two_hole_cards
@@ -17,26 +17,33 @@ module PokerHelp
     end
 
     def limit_bet
-      players.each { |player| action = player.choose(pot, current_bet_size)
-                              update_players(action, player) }
+      ordering = (state == :blind_bet) ? players.rotate.rotate : players
+      ordering.each do |player|
+        action = player.choose(pot, current_bet_size, current_choices)
+        update_state(action, player)
+      end
     end
 
     def deal_flop
-      self.flop = deck.deal(3)
+      self.flop   = deck.deal(3)
+      self.state = :first_action
       players.each { |player| player.receive_cards(board) }
     end
 
     def turn_event
       self.post_turn_event = true
+      self.pot.current_bet_size = current_bet_size
     end
 
     def deal_turn
       self.turn = deck.deal
+      self.state = :first_action
       players.each { |player| player.receive_cards(turn) }
     end
 
     def deal_river
       self.river = deck.deal
+      self.state = :first_action
       players.each { |player| player.receive_cards(river) }
     end
 
@@ -46,7 +53,7 @@ module PokerHelp
     end
 
     def move_button
-      players.rotate
+      players.rotate!
     end
 
   end
