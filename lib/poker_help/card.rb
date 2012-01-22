@@ -55,7 +55,7 @@ module PokerHelp
       'A' => 14
     }
 
-    def Card.face_value(face)
+    def self.face_value(face)
       face.upcase!
       if face == 'L' || !FACE_VALUES.has_key?(face)
         nil

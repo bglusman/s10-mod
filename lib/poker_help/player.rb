@@ -7,7 +7,6 @@ module PokerHelp
 
     def receive_cards(hand)
       @hand = @hand.nil? ? hand : @hand + hand
-
     end
 
     def fold
@@ -23,8 +22,7 @@ module PokerHelp
 
     def choose(pot, bet_size, choices)
       fake_hands = simulated_other_hands(other_players.count)
-            binding.pry
-      if hand.size <= 3 && hand > fake_hands.max
+      if (hand.size <= 3) && (hand > fake_hands.max)
         if choices.include?(:raise)
           bet(bet_size*2, pot)
           return :raise
@@ -56,14 +54,11 @@ module PokerHelp
           end
         end
       end
-
-      #while empty presumably they check always?
-      return :fold
     end
 
     def have_pot_odds?(bet_size, pot)
       (Utility.outs_odds_probability_hash(hand,
-          fake_deck).fetch(:probability) > bet_size.to_f/pot.amount)
+          fake_deck).fetch(:probability) > bet_size.to_f/pot.total)
     end
 
     def <=>(other)

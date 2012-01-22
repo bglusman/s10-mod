@@ -239,23 +239,25 @@ module PokerHelp
     end
 
     def pair?
-      if (md = (by_face =~ /(.). \1./))
+      (md = (by_face =~ /(.). \1./))
         # get kicker
-        arranged_hand = arrange_hand(md)
-        arranged_hand.match(/(?:\S\S ){2}(\S)\S\s+(\S)\S\s+(\S)/)
-        [
-          [
-            2,
-            Card::face_value(md[1]),
-            Card::face_value($1),
-            Card::face_value($2),
-            Card::face_value($3)
-          ],
-          arranged_hand
-        ]
-      else
-        false
-      end
+
+        # arranged_hand = arrange_hand(md)
+        # arranged_hand.match(/(?:\S\S ){2}(\S)\S\s+(\S)\S\s+(\S)/)
+        #
+        # [
+        #   [
+        #     2,
+        #     Card::face_value(md[1]),
+        #     Card::face_value($1),
+        #     Card::face_value($2),
+        #     Card::face_value($3)
+        #   ],
+        #   arranged_hand
+        # ]
+      # else
+      #   false
+      # end
     end
 
     def highest_card?
@@ -324,7 +326,7 @@ module PokerHelp
     alias :to_ary :to_a
     
     def <=> other_hand
-      self.score[0].compact <=> other_hand.score[0].compact
+      self.score[0] <=> other_hand.score[0]
     end
     
     # Add a card to the hand
@@ -345,6 +347,10 @@ module PokerHelp
         @hand << Card.new(nc)
       end
       self
+    end
+
+    def +(other)
+      self.<<(other)
     end
     
     # Remove a card from the hand.
