@@ -11,6 +11,7 @@ game = PokerHelp::Simulation.new(7)
 loop do
   game.run
   p game.players.sort{|x,y| x.name <=> y.name }.map {|p| "#{p.name}: $#{p.chips}.00"}
+  p game.round.winner.hand
   break if game.players.detect {|p| p.chips < 25}
 end
 

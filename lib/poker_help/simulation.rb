@@ -19,7 +19,7 @@ module PokerHelp
     end
 
     def run
-      round = Round.new(game, players.dup, betting)
+      self.round = Round.new(game, players.dup, betting)
       game.action_sequence.each {|action| round.send(action); next if round.winner}
       players.rotate!
     end

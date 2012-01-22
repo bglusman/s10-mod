@@ -6,6 +6,7 @@ module PokerHelp
     def initialize(game, players, betting)
       @game = game
       @players = players
+      @players.each {|p| p.hand = nil}
       @betting = betting
       @deck = Deck.new
       @pot = Pot.new

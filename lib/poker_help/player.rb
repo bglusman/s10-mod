@@ -32,7 +32,6 @@ module PokerHelp
 
     def choose(pot, bet_size, choices)
       fake_hands = simulated_other_hands(other_players.count)
-      # binding.pry
       case
       when (rand < 0.1)
         if choices.include?(:raise)
