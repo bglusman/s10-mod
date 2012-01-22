@@ -434,7 +434,7 @@ module PokerHelp
         raise ArgumentError, "Invalid expression: #{expression.inspect}"
       end
     end
-    
+
     def +(other)
       cards = @hand.map { |card| Card.new(card) }
       case other

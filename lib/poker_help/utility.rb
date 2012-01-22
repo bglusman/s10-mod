@@ -31,7 +31,7 @@ module PokerHelp
 
     def self.outs(candidates, targets)
       candidates.select { |deck, hand|
-          targets.reduce(false) {|bool, target| bool || Hand.new(hand.to_a.compact).send(target)}
+          targets.reduce(false) {|bool, target| bool || hand.send(target)}
         }.size
     end
   end
