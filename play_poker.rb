@@ -1,4 +1,6 @@
 require_relative 'lib/poker_help'
+
+PokerHelp::HUMAN = true
 game = PokerHelp::Simulation.new(7)
 
 #uncomment for deterministic behavior

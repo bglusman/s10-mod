@@ -91,7 +91,39 @@ module PokerHelp
       count.times { fakes << Hand.new(self.fake_deck.deal(hand.size)) }
       fakes
     end
-
-
   end
+
+  class HumanPlayer < Player
+    def choose(pot, bet_size, choices)
+      self.fake_deck = Deck.new
+      self.fake_deck.burn(hand.to_a)
+
+      puts "Your cards (pocket & board)"
+      puts hand
+      puts "Your chips: $#{chips}.00"
+      puts "Your choices:"
+      puts choices
+      puts "Your odds of improving to two pair or better:"
+      puts Utility.outs_odds_probability_hash(hand, fake_deck)
+      puts
+      puts "Type your choice number, 1-#{choices.count}"
+      choice = gets
+      pick = choices[choice.to_i - 1]
+
+      case pick
+      when :call
+        bet(bet_size, pot)
+        return :call
+      when :raise
+        bet(bet_size*2, pot)
+        return :raise
+      when :check
+        return :check
+      when :fold
+        return :fold
+      end
+
+    end
+  end
+
 end

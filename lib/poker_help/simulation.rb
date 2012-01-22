@@ -8,6 +8,8 @@ module PokerHelp
       @players = []
       name = PLAYER_NAMES.each
       players.times {@players << Player.new(name.next) }
+      puts "Enter your name:"
+      @players << HumanPlayer.new(gets.chomp) if HUMAN
       @players.each do |p|
         players_copy = @players.dup
         players_copy.delete(p)
