@@ -3,13 +3,12 @@ module PokerHelp
     include Enumerable
     extend Forwardable
     def_delegators :@cards, :each
-    #alias :count :size
 
     def initialize
       @cards = []
-      Card::SUITS.each_byte do |suit|
+      Card::SUITS.each do |suit|
         # careful not to double include the aces...
-        Card::FACES[1..-1].each_byte do |face|
+        Card::FACES[1..-1].each do |face|
           @cards.push(Card.new(face.chr, suit.chr))
         end
       end

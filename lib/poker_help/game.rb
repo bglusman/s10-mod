@@ -13,9 +13,5 @@ module PokerHelp
       @action_iterator = action_sequence.each
     end
 
-    def next
-      @action_iterator.next
-    end
-
   end
 end

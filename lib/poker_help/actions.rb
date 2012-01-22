@@ -13,7 +13,7 @@ module PokerHelp
     end
 
     def deal_two_hole_cards
-      players.each {|p| p.receive_cards(Hand.new(deck.deal(2)))}
+      players.each {|p| p.receive_cards(deck.deal(2))}
     end
 
     def limit_bet
@@ -27,7 +27,7 @@ module PokerHelp
     def deal_flop
       self.flop   = deck.deal(3)
       self.state = :first_action
-      players.each { |player| player.receive_cards(board) }
+      players.each { |player| player.receive_cards(Hand.new(flop)) }
     end
 
     def turn_event
@@ -38,22 +38,18 @@ module PokerHelp
     def deal_turn
       self.turn = deck.deal
       self.state = :first_action
-      players.each { |player| player.receive_cards(turn) }
+      players.each { |player| player.receive_cards(Hand.new(turn)) }
     end
 
     def deal_river
       self.river = deck.deal
       self.state = :first_action
-      players.each { |player| player.receive_cards(river) }
+      players.each { |player| player.receive_cards(Hand.new(river)) }
     end
 
     def showdown_and_award_pot
       self.winner ||= players.max
-      winner.chips += pot.total
-    end
-
-    def move_button
-      players.rotate!
+      self.winner.chips += pot.total
     end
 
   end

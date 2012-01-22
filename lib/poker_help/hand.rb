@@ -28,15 +28,14 @@ module PokerHelp
   # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   # POSSIBILITY OF SUCH DAMAGE.
 
-
   class Hand
     include Comparable
+    include Enumerable
     attr_reader :hand
 
-    class << self
-      attr_accessor :allow_duplicates
-    end
-    @allow_duplicates = false    # true by default
+    @@allow_duplicates = true    # true by default
+    def self.allow_duplicates; @@allow_duplicates; end
+    def self.allow_duplicates=(v); @@allow_duplicates = v; end
 
     # Returns a new Hand object. Accepts the cards represented
     # in a string or an array
@@ -44,21 +43,22 @@ module PokerHelp
     #     Hand.new("3d 5c 8h Ks")   # => #<Hand:0x5c673c ...
     #     Hand.new(["3d", "5c", "8h", "Ks"])  # => #<Hand:0x5c2d6c ...
     def initialize(cards = [])
-      if cards.is_a? Array
-        @hand = cards.map do |card|
+      @hand = case cards
+      when Array
+        cards.map do |card|
           if card.is_a? Card
             card
           else
             Card.new(card.to_s)
           end
         end
-      elsif cards.respond_to?(:to_str)
-        @hand = cards.scan(/\S{2,3}/).map { |str| Card.new(str) }
+      when String
+        cards.scan(/\S{2}/).map { |str| Card.new(str) }
       else
-        @hand = cards
+        cards
       end
-      
-      check_for_duplicates if !Hand.allow_duplicates
+
+      check_for_duplicates unless allow_duplicates
     end
 
     # Returns a new Hand object with the cards sorted by suit
@@ -66,7 +66,7 @@ module PokerHelp
     #
     #     Hand.new("3d 5c 8h Ks").by_suit.just_cards   # => "Ks 8h 3d 5c"
     def by_suit
-      Hand.new(@hand.sort_by { |c| [c.suit, c.face] }.reverse)
+      Hand.new(@hand.sort_by { |c| [Card::SUITS.index(c.suit), c] }.reverse)
     end
 
     # Returns a new Hand object with the cards sorted by value
@@ -74,9 +74,10 @@ module PokerHelp
     #
     #     Hand.new("3d 5c 8h Ks").by_face.just_cards   # => "Ks 8h 5c 3d"
     def by_face
-      Hand.new(@hand.sort_by { |c| [c.face, c.suit] }.reverse)
+      # suit sorting is fairly pointless and complex
+      Hand.new(@hand.sort_by { |c| [c, Card::SUITS.index(c.suit)] }.reverse)
     end
-    
+
     # Returns string representation of the hand without the rank
     #
     #     Hand.new(["3c", "Kh"]).just_cards     # => "3c Kh"
@@ -84,7 +85,7 @@ module PokerHelp
       @hand.join(" ")
     end
     alias :cards :just_cards
-    
+
     # Returns an array of the card values in the hand.
     # The values returned are 1 less than the value on the card.
     # For example: 2's will be shown as 1.
@@ -113,7 +114,7 @@ module PokerHelp
     end
 
     def straight_flush?
-      if (md = (/.(.)(.)(?: 1.\2){4}/.match(delta_transform(true))))
+      if (md = (/.(.)(.)(?: 1.\2){4}/.match(delta_flush)))
         high_card = Card::face_value(md[1])
         arranged_hand = fix_low_ace_display(md[0] + ' ' +
             md.pre_match + ' ' + md.post_match)
@@ -126,14 +127,11 @@ module PokerHelp
     def four_of_a_kind?
       if (md = (by_face =~ /(.). \1. \1. \1./))
         # get kicker
-        (md.pre_match + md.post_match).match(/(\S)/)
-        [
-          [8, Card::face_value(md[1]), Card::face_value($1)],
-          arrange_hand(md)
-        ]
-      else
-        false
+        result = [8, Card::face_value(md[1])]
+        result << Card::face_value($1) if (md.pre_match + md.post_match).match(/(\S)/)
+        return [result, arrange_hand(md)]
       end
+      false
     end
 
     def full_house?
@@ -174,7 +172,7 @@ module PokerHelp
     def straight?
       result = false
       if hand.size >= 5
-        transform = delta_transform
+        transform = delta_straight
         # note we can have more than one delta 0 that we
         # need to shuffle to the back of the hand
         i = 0
@@ -196,19 +194,17 @@ module PokerHelp
       if (md = (by_face =~ /(.). \1. \1./))
         # get kicker
         arranged_hand = arrange_hand(md)
-        arranged_hand.match(/(?:\S\S ){3}(\S)\S (\S)/)
-        [
-          [
-            4,
-            Card::face_value(md[1]),
-            Card::face_value($1),
-            Card::face_value($2)
-          ],
-          arranged_hand
-        ]
-      else
-        false
+        matches = arranged_hand.match(/(?:\S\S ){2}(\S\S)/)
+        if matches
+          result = [4, Card::face_value(md[1])]
+          matches = arranged_hand.match(/(?:\S\S ){3}(\S)/)
+          result << Card::face_value($1) if matches
+          matches = arranged_hand.match(/(?:\S\S ){3}(\S)\S (\S)/)
+          result << Card::face_value($2) if matches
+          return [result, arranged_hand]
+        end
       end
+      false
     end
 
     def two_pair?
@@ -223,46 +219,42 @@ module PokerHelp
         # that were in-between, and the cards that came after.
         arranged_hand = arrange_hand(md[0].sub(md[2], '') + ' ' +
             md.pre_match + ' ' + md[2] + ' ' + md.post_match)
-        arranged_hand.match(/(?:\S\S ){4}(\S)/)
-        [
-          [
-            3,
-            Card::face_value(md[1]),    # face value of the first pair
-            Card::face_value(md[3]),    # face value of the second pair
-            Card::face_value($1)        # face value of the kicker
-          ],
-          arranged_hand
-        ]
+        matches = arranged_hand.match(/(?:\S\S ){3}(\S\S)/)
+        if matches
+          result = []
+          result << 3
+          result << Card::face_value(md[1])    # face value of the first pair
+          result << Card::face_value(md[3])    # face value of the second pair
+          matches = arranged_hand.match(/(?:\S\S ){4}(\S)/)
+          result << Card::face_value($1) if matches    # face value of the kicker
+        return [result, arranged_hand]
+        end
+      end
+      false
+    end
+
+    def pair?
+      if (md = (by_face =~ /(.). \1./))
+        arranged_hand_str = arrange_hand(md)
+        arranged_hand = Hand.new(arranged_hand_str)
+
+        if arranged_hand.hand[0].face == arranged_hand.hand[1].face &&
+            arranged_hand.hand[0].suit != arranged_hand.hand[1].suit
+          result = [2, arranged_hand.hand[0].face]
+          result << arranged_hand.hand[2].face if arranged_hand.size > 2
+          result << arranged_hand.hand[3].face if arranged_hand.size > 3
+          result << arranged_hand.hand[4].face if arranged_hand.size > 4
+
+          return [result, arranged_hand_str]
+        end
       else
         false
       end
     end
 
-    def pair?
-      (md = (by_face =~ /(.). \1./))
-        # get kicker
-
-        # arranged_hand = arrange_hand(md)
-        # arranged_hand.match(/(?:\S\S ){2}(\S)\S\s+(\S)\S\s+(\S)/)
-        #
-        # [
-        #   [
-        #     2,
-        #     Card::face_value(md[1]),
-        #     Card::face_value($1),
-        #     Card::face_value($2),
-        #     Card::face_value($3)
-        #   ],
-        #   arranged_hand
-        # ]
-      # else
-      #   false
-      # end
-    end
-
     def highest_card?
       result = by_face
-      [[1, *result.face_values[0..4]], result.hand.join(' ')]
+      [[1, *result.face_values[0..result.face_values.length]], result.hand.join(' ')]
     end
 
     OPS = [
@@ -286,9 +278,9 @@ module PokerHelp
         (method(op[1]).call()) ? op[0] : false
       }.find { |v| v }
     end
-    
+
     alias :rank :hand_rating
-    
+
     def score
       # OPS.map returns an array containing the result of calling each OPS method again
       # the poker hand. The non-nil cell closest to the front of the array represents
@@ -305,11 +297,11 @@ module PokerHelp
     #
     #     ph = Hand.new("As 3s 5s 2s 4s")
     #     ph.sort_using_rank        # => "5s 4s 3s 2s As"
-    #     ph.by_face.just_cards       # => "As 5s 4s 3s 2s"   
+    #     ph.by_face.just_cards       # => "As 5s 4s 3s 2s"
     def sort_using_rank
       score[1]
     end
-    
+
     # Returns string with a listing of the cards in the hand followed by the hand's rank.
     #
     #     h = Hand.new("8c 8s")
@@ -317,20 +309,19 @@ module PokerHelp
     def to_s
       just_cards + " (" + hand_rating + ")"
     end
-    
+
     # Returns an array of `Card` objects that make up the `Hand`.
     def to_a
       @hand
     end
-    
     alias :to_ary :to_a
-    
+
     def <=> other_hand
-      self.score[0] <=> other_hand.score[0]
+      self.score[0].compact <=> other_hand.score[0].compact
     end
-    
+
     # Add a card to the hand
-    # 
+    #
     #     hand = Hand.new("5d")
     #     hand << "6s"          # => Add a six of spades to the hand by passing a string
     #     hand << ["7h", "8d"]  # => Add multiple cards to the hand using an array
@@ -338,21 +329,17 @@ module PokerHelp
       if new_cards.is_a?(Card) || new_cards.is_a?(String)
         new_cards = [new_cards]
       end
-      
+
       new_cards.each do |nc|
-        unless Hand.allow_duplicates
+        unless allow_duplicates
           raise "A card with the value #{nc} already exists in this hand. Set Hand.allow_duplicates to true if you want to be able to add a card more than once." if self =~ /#{nc}/
         end
-        
+
         @hand << Card.new(nc)
       end
-      self
     end
 
-    def +(other)
-      self.<<(other)
-    end
-    
+
     # Remove a card from the hand.
     #
     #     hand = Hand.new("5d Jd")
@@ -361,14 +348,14 @@ module PokerHelp
     def delete card
       @hand.delete(Card.new(card))
     end
-    
+
     # Same concept as Array#uniq
     def uniq
       Hand.new(@hand.uniq)
     end
-    
+
     # Resolving methods are just passed directly down to the @hand array
-    RESOLVING_METHODS = [:size, :+, :-]
+    RESOLVING_METHODS = [:each, :size, :-]
     RESOLVING_METHODS.each do |method|
       class_eval %{
         def #{method}(*args, &block)
@@ -376,20 +363,106 @@ module PokerHelp
         end
       }
     end
+
+    def allow_duplicates
+      @@allow_duplicates
+    end
     
-    private
-    
-    def check_for_duplicates
-      if @hand.size != @hand.uniq.size && !Hand.allow_duplicates
-        raise "Attempting to create a hand that contains duplicate cards. Set Hand.allow_duplicates to true if you do not want to ignore this error."
+    # Checks whether the hand matches usual expressions like AA, AK, AJ+, 66+, AQs, AQo...
+    # 
+    # Valid expressions:
+    # * "AJ": Matches exact faces (in this case an Ace and a Jack), suited or not
+    # * "AJs": Same but suited only
+    # * "AJo": Same but offsuit only
+    # * "AJ+": Matches an Ace with any card >= Jack, suited or not
+    # * "AJs+": Same but suited only
+    # * "AJo+": Same but offsuit only
+    # * "JJ+": Matches any pair >= "JJ".
+    # * "8T+": Matches connectors (in this case with 1 gap : 8T, 9J, TQ, JK, QA)
+    # * "8Ts+": Same but suited only
+    # * "8To+": Same but offsuit only
+    #
+    # The order of the cards in the expression is important (8T+ is not the same as T8+), but the order of the cards in the hand is not ("AK" will match "Ad Kc" and "Kc Ad").
+    #
+    # The expression can be an array of expressions. In this case the method returns true if any expression matches.
+    #
+    # This method only works on hands with 2 cards.
+    #
+    #     Hand.new('Ah Ad').match? 'AA' # => true
+    #     Hand.new('Ah Kd').match? 'AQ+' # => true
+    #     Hand.new('Jc Qc').match? '89s+' # => true
+    #     Hand.new('Ah Jd').match? %w( 22+ A6s+ AJ+ ) # => true
+    #     Hand.new('Ah Td').match? %w( 22+ A6s+ AJ+ ) # => false
+    #
+    def match? expression
+      raise "Hands with #{@hand.size} cards is not supported" unless @hand.size == 2
+      
+      if expression.is_a? Array
+        return expression.any? { |e| match?(e) }
+      end
+      
+      faces = @hand.map { |card| card.face }.sort.reverse
+      suited = @hand.map { |card| card.suit }.uniq.size == 1
+      if expression =~ /^(.)(.)(s|o|)(\+|)$/
+        face1 = Card.face_value($1)
+        face2 = Card.face_value($2)
+        raise ArgumentError, "Invalid expression: #{expression.inspect}" unless face1 and face2
+        suit_match = $3
+        plus = ($4 != "")
+        
+        if plus
+          if face1 == face2
+            face_match = (faces.first == faces.last and faces.first >= face1)
+          elsif face1 > face2
+            face_match = (faces.first == face1 and faces.last >= face2)
+          else
+            face_match = ((faces.first - faces.last) == (face2 - face1) and faces.last >= face1)
+          end
+        else
+          expression_faces = [face1, face2].sort.reverse
+          face_match = (expression_faces == faces)
+        end
+        case suit_match
+        when ''
+          face_match
+        when 's'
+          face_match and suited
+        when 'o'
+          face_match and !suited
+        end
+      else
+        raise ArgumentError, "Invalid expression: #{expression.inspect}"
       end
     end
     
+    def +(other)
+      cards = @hand.map { |card| Card.new(card) }
+      case other
+      when String
+        cards << Card.new(other)
+      when Card
+        cards << other
+      when Hand
+        cards += other.hand
+      else
+        raise ArgumentError, "Invalid argument: #{other.inspect}"
+      end
+      Hand.new(cards)
+    end
+
+    #private
+
+    def check_for_duplicates
+      if @hand.size != @hand.uniq.size && !allow_duplicates
+        raise "Attempting to create a hand that contains duplicate cards. Set Hand.allow_duplicates to true if you do not want to ignore this error."
+      end
+    end
+
     # if md is a string, arrange_hand will remove extra white space
     # if md is a MatchData, arrange_hand returns the matched segment
     # followed by the pre_match and the post_match
     def arrange_hand(md)
-        hand = if (md.respond_to?(:to_str))
+        hand = if md.respond_to?(:to_str)
           md
         else
           md[0] + ' ' + md.pre_match + md.post_match
@@ -400,30 +473,41 @@ module PokerHelp
     # delta transform creates a version of the cards where the delta
     # between card values is in the string, so a regexp can then match a
     # straight and/or straight flush
-    def delta_transform(use_suit = false)
-      aces = @hand.select { |c| c.face == Card::face_value('A') }
-      aces.map! { |c| Card.new(1,c.suit) }
+    def delta_transform(the_hand)
+      aces = the_hand.select { |c| c.face == 'A' }
+      aces.map! { |c| Card.new('A', c.suit) }
 
-      base = if (use_suit)
-        (@hand + aces).sort_by { |c| [c.suit, c.face] }.reverse
-      else
-        (@hand + aces).sort_by { |c| [c.face, c.suit] }.reverse
-      end
+      # duplicate aces on the low end
+      base = the_hand.sort.reverse + aces
 
       result = base.inject(['',nil]) do |(delta_hand, prev_card), card|
         if (prev_card)
-          delta = prev_card - card.face
+          delta = prev_card - card
         else
           delta = 0
         end
+
         # does not really matter for my needs
         delta = 'x' if (delta > 9 || delta < 0)
         delta_hand += delta.to_s + card.to_s + ' '
-        [delta_hand, card.face]
+        [delta_hand, card]
       end
 
       # we just want the delta transform, not the last cards face too
       result[0].chop
+    end
+
+    def delta_flush
+      ret = ''
+      Card::SUITS.each do |s|
+        suit_hand =  @hand.find_all { |c| c.suit == s }
+        ret = ret + delta_transform(suit_hand) + ' '
+      end
+      ret
+    end
+
+    def delta_straight
+      delta_transform @hand
     end
 
     def fix_low_ace_display(arranged_hand)
@@ -442,5 +526,7 @@ module PokerHelp
       # careful to use gsub as gsub! can return nil here
       arranged_hand.gsub(/\s+$/, '')
     end
+
   end
+
 end

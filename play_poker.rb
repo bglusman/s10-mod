@@ -1,21 +1,17 @@
 require_relative 'lib/poker_help'
+game = PokerHelp::Simulation.new(7)
 
-game = PokerHelp::Simulation.new(2)
+#uncomment for deterministic behavior
+# module Kernel
+#   def rand
+#     srand 3579
+#   end
+# end
 
-p game
-
-module Kernel
-  def rand
-    srand 3579
-  end
+loop do
+  game.run
+  p game.players.sort{|x,y| x.name <=> y.name }.map {|p| "#{p.name}: $#{p.chips}.00"}
+  break if game.players.detect {|p| p.chips < 25}
 end
 
-p game.run
 
-module Kernel
-  def rand
-    srand 2468
-  end
-end
-
-p game.run

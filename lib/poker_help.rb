@@ -1,5 +1,4 @@
 module PokerHelp
-  require 'pry'
   require 'forwardable'
   require_relative 'poker_help/actions'
   require_relative 'poker_help/card'

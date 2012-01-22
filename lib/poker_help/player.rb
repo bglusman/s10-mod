@@ -1,12 +1,22 @@
 module PokerHelp
   class Player
-    attr_accessor :chips, :hand, :other_players, :fake_deck
-    def initialize(chips=500)
-      @chips = chips
+    attr_accessor :chips, :other_players, :fake_deck
+    attr_reader   :name
+    def initialize(name, chips=500)
+      @chips  = chips
+      @name   = name
+    end
+
+    def hand=(cards)
+      @hand =cards
+    end
+
+    def hand
+      Hand.new(@hand)
     end
 
     def receive_cards(hand)
-      @hand = @hand.nil? ? hand : @hand + hand
+      @hand = (@hand.nil? ? hand : @hand + hand)
     end
 
     def fold
@@ -22,7 +32,9 @@ module PokerHelp
 
     def choose(pot, bet_size, choices)
       fake_hands = simulated_other_hands(other_players.count)
-      if (hand.size <= 3) && (hand > fake_hands.max)
+      # binding.pry
+      case
+      when (rand < 0.1)
         if choices.include?(:raise)
           bet(bet_size*2, pot)
           return :raise
@@ -30,14 +42,22 @@ module PokerHelp
           bet(bet_size, pot)
           return :call
         end
-      elsif hand.size > 2 && choices.include?(:raise)
+      when (hand.size <= 3) && (hand > fake_hands.max)
+        if choices.include?(:raise)
+          bet(bet_size*2, pot)
+          return :raise
+        else
+          bet(bet_size, pot)
+          return :call
+        end
+      when hand.size > 2 && choices.include?(:raise)
         if have_pot_odds?(bet_size, pot) && hand > fake_hands.max
           bet(bet_size*2, pot)
           return :raise
         else
           return :fold
         end
-      elsif hand.size > 2 && choices.include?(:bet)
+      when hand.size > 2 && choices.include?(:bet)
         if have_pot_odds?(bet_size, pot) && hand > fake_hands.max
           bet(bet_size, pot)
           return :bet

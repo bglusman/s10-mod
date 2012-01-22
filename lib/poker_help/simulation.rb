@@ -2,9 +2,12 @@ module PokerHelp
   class Simulation
     attr_accessor :round, :players, :game, :betting
 
+    PLAYER_NAMES = ["A1", "B2", "C3", "D4", "E5", "F6", "G7", "H8", "I9", "J10"]
+
     def initialize(players, &block)
       @players = []
-      players.times {@players << Player.new }
+      name = PLAYER_NAMES.each
+      players.times {@players << Player.new(name.next) }
       @players.each do |p|
         players_copy = @players.dup
         players_copy.delete(p)
@@ -16,8 +19,9 @@ module PokerHelp
     end
 
     def run
-      round = Round.new(game, players, betting)
+      round = Round.new(game, players.dup, betting)
       game.action_sequence.each {|action| round.send(action); next if round.winner}
+      players.rotate!
     end
   end
 end

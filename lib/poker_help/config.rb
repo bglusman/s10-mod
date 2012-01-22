@@ -17,15 +17,14 @@ module PokerHelp
              :limit_bet,
              :deal_river,
              :limit_bet,
-             :showdown_and_award_pot,
-             :move_button]
+             :showdown_and_award_pot]
 
     @bet_parameters = {:ante_size             => 0,       #used w/ blinds in tournaments & in stud/draw
                       :limit                  => :single, #:pot, :nolimit
-                      :big_blind_size         => 2,
-                      :small_blind_size       => 1,
-                      :min_bet_pre_turn       => 2,
-                      :min_bet_post_turn      => 4,
+                      :big_blind_size         => 15,
+                      :small_blind_size       => 5,
+                      :min_bet_pre_turn       => 15,
+                      :min_bet_post_turn      => 30,
                       :raise_limit  => 3
                       }
 
