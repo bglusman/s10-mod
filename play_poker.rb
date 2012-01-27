@@ -1,7 +1,15 @@
 require_relative 'lib/poker_help'
 
-PokerHelp::HUMAN = true
-game = PokerHelp::Simulation.new(7)
+
+puts "Want a human player? Y or N"
+
+human = gets.chomp
+PokerHelp::HUMAN = (human == "Y")
+
+puts "How many computer players?"
+bots = gets.chomp.to_i
+
+game = PokerHelp::Simulation.new(bots)
 
 #uncomment for deterministic behavior
 # module Kernel
@@ -14,7 +22,7 @@ loop do
   game.run
   p game.players.sort{|x,y| x.name <=> y.name }.map {|p| "#{p.name}: $#{p.chips}.00"}
   p game.round.winner.hand
-  break if game.players.detect {|p| p.chips < 25}
+  break if game.players.detect {|p| p.chips < 60}
 end
 
 
